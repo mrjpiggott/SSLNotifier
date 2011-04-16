@@ -160,17 +160,17 @@ SSLNotifier.getBrowser = function(url) {
  ***********************/
 SSLNotifier.newCert = function(cert, host, location) {
 	var nb = gBrowser.getNotificationBox(SSLNotifier.getBrowser(location));
-	var msg = "SSL Notification: Store certificate for host " + host + " (" + oldCert.issuerOrganization + " to " + oldCert.organization + " for " + cert.commonName + ")" ;
-	if (!nb.getNotificationWithValue(msg) {
-		nb.appendNotification(msg, "ca.piggott.sslnotifier", null, nb.PRIORITY_INFO_HIGH, [SSLNotifier.storeBtn(cert, host)]);
+	var msg = "SSL Notification: Store certificate for host " + host + " (" + cert.issuerOrganization + " to " + cert.organization + " for " + cert.commonName + ")" ;
+	if (!nb.getNotificationWithValue("ca.piggott.sslnotifier:valid:" + host)) {
+		nb.appendNotification(msg, "ca.piggott.sslnotifier:valid:" + host, null, nb.PRIORITY_INFO_HIGH, [SSLNotifier.storeBtn(cert, host)]);
 	}
 };
 
 SSLNotifier.certChanged = function(oldCert, cert, host, location) {
 	var nb = gBrowser.getNotificationBox(SSLNotifier.getBrowser(location));
 	var msg = "CERTIFICATE CHANGED: formerly issued by " + oldCert.issuerOrganization + " to " + oldCert.organization + " for " + cert.commonName;
-	if (!nb.getNotificationWithValue(msg) {
-		nb.appendNotification(msg, "ca.piggott.sslnotifier", null, nb.PRIORITY_CRITICAL_HIGH, [SSLNotifier.updateBtn(cert, host)]);
+	if (!nb.getNotificationWithValue("ca.piggott.sslnotifier:invalid:" + host)) {
+		nb.appendNotification(msg, "ca.piggott.sslnotifier:invalid:" + host, null, nb.PRIORITY_CRITICAL_HIGH, [SSLNotifier.updateBtn(cert, host)]);
 	}
 };
 
