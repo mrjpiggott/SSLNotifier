@@ -1,9 +1,3 @@
-function myDump(aMessage) {
-  var consoleService = Components.classes["@mozilla.org/consoleservice;1"]
-                                 .getService(Components.interfaces.nsIConsoleService);
-  consoleService.logStringMessage("SSLNotifier: " + aMessage);
-}
-
 if ("undefined" == typeof(SSLNotifier)) {
   var SSLNotifier = {
     init : function() {
@@ -14,7 +8,6 @@ if ("undefined" == typeof(SSLNotifier)) {
 
 		var storageService = Components.classes["@mozilla.org/storage/service;1"]
 				.getService(Components.interfaces.mozIStorageService); 
-		myDump(file.path);
 		this.mDBConn = storageService.openDatabase(file);
 		while(!this.mDBConn.connectionReady){}
 		if (!this.mDBConn.tableExists("certs"))	{
@@ -39,34 +32,24 @@ SSLNotifier.exit = function() {
  * Database Code
  ***********************/
 SSLNotifier.handleCert = function(cert, host) {
-myDump("handleCert called: " + host);
 	var statement = SSLNotifier.mDBConn.createStatement("SELECT * FROM certs WHERE host = :host");
 	statement.params.host = host;
 	statement.executeAsync({
 		  handleResult: function(aResultSet) {
-myDump("handleResult called");
 				var row = aResultSet.getNextRow();
 				if (row) {
 					this.rowCount++;
-myDump("handleResult has row: " +this.rowCount);
 					var cert = SSLNotifier.rowToCert(row);
 					// Is it different, is sha1 sufficient?
 					if (this.newCert.sha1Fingerprint != cert.sha1Fingerprint) {
-						myDump("Calling certChanged" + this.host);
 						SSLNotifier.certChanged(cert, this.newCert, this.host, this.location);
-					} else {
-						myDump("Good cert");
 					}
-				} else {
-myDump("handleResult no row");
 				}
 		  },
 		  handleError: function(aError) {
-myDump("handleError called " + aError);
 		  // TODO log this?
 		  },
 		  handleCompletion: function(aReason) {
-myDump("handleCompletion called " + this.host);
 			if (aReason == Components.interfaces.mozIStorageStatementCallback.REASON_FINISHED && this.rowCount == 0) {
 				SSLNotifier.newCert(this.newCert, this.host, this.location);
 			}
@@ -80,8 +63,6 @@ myDump("handleCompletion called " + this.host);
 
 // Add a new certificate
 SSLNotifier.store = function(cert, host) {
-	myDump("Storing: " + host);
-	myDump("Certificate: " + Components.classes["@mozilla.org/dom/json;1"].createInstance(Components.interfaces.nsIJSON).encode(cert));
 	var statement = this.mDBConn.createStatement("INSERT INTO certs (host, cn, org, issuer, sha) VALUES (:host, :cn, :org, :issuer, :sha)");
 	statement.params.cn = cert.commonName;
 	statement.params.org = cert.organization;
@@ -93,8 +74,6 @@ SSLNotifier.store = function(cert, host) {
 
 // Replace an existing certificate
 SSLNotifier.update = function(cert, host) {
-	myDump("Updating: " + host);
-	myDump("Certificate: " + Components.classes["@mozilla.org/dom/json;1"].createInstance(Components.interfaces.nsIJSON).encode(cert));
 	var statement = this.mDBConn.createStatement("UPDATE certs SET cn = :cn, org = :org, issuer = :issuer, sha = :sha WHERE host = :host");
 	statement.params.cn = cert.commonName;
 	statement.params.org = cert.organization;
@@ -106,7 +85,6 @@ SSLNotifier.update = function(cert, host) {
 
 // Convert a database row to a "Certificate"
 SSLNotifier.rowToCert = function(row) {
-myDump("rowToCert called");
 	return SSLNotifier.toCert(row.getResultByName("cn"), row.getResultByName("org"), row.getResultByName("issuer"), row.getResultByName("sha"));
 };
 
@@ -117,13 +95,11 @@ myDump("rowToCert called");
  * Browser Code
  ***********************/
 SSLNotifier.onPageLoad = function(aEvent) {
-myDump("onPageLoad called: " + aEvent.originalTarget.location);
   	var ui = gBrowser.securityUI;
     var sp = ui.QueryInterface(Components.interfaces.nsISSLStatusProvider);
 	var status = sp.SSLStatus;
 	if (status != null) {
 		status = status.QueryInterface(Components.interfaces.nsISSLStatus);
-		myDump(" "  + status.serverCert.commonName + " " + status.serverCert.organization + " " + status.serverCert.issuerOrganization + " " + status.serverCert.sha1Fingerprint);
 		// It seems to be necessary to copy the certificate as it disappears on asynchronous calls.
 		SSLNotifier.handleCert(SSLNotifier.toCert(status.serverCert.commonName, status.serverCert.organization, status.serverCert.issuerOrganization, status.serverCert.sha1Fingerprint), 
 				SSLNotifier.getHost(aEvent.originalTarget.location));
@@ -166,16 +142,12 @@ SSLNotifier.newCert = function(cert, host, location) {
 };
 
 SSLNotifier.certChanged = function(oldCert, cert, host, location) {
-myDump("certChanged called");
 	var nb = gBrowser.getNotificationBox(SSLNotifier.getBrowser(location));
 	var msg = "CERTIFICATE CHANGED: formerly issued by " + oldCert.issuerOrganization + " to " + oldCert.organization ;
 	nb.appendNotification(msg, "ca.piggott.sslnotifier", null, nb.PRIORITY_CRITICAL_HIGH, [SSLNotifier.updateBtn(cert, host)]);
 };
 
 SSLNotifier.storeBtn = function(cert, host) {
-	var nativeJSON = Components.classes["@mozilla.org/dom/json;1"].createInstance(Components.interfaces.nsIJSON);
-	 myDump(host + nativeJSON.encode(cert));
-
 	var button = new Object();
 	button.label = "Store";
 	button.callback = function (event) {
@@ -188,9 +160,6 @@ SSLNotifier.storeBtn = function(cert, host) {
 };
 
 SSLNotifier.updateBtn = function(cert, host) {
-	var nativeJSON = Components.classes["@mozilla.org/dom/json;1"].createInstance(Components.interfaces.nsIJSON);
-	 myDump(host + nativeJSON.encode(cert));
-
 	var button = new Object();
 	button.label = "Update";
 	button.callback = function (event) {
@@ -210,7 +179,6 @@ SSLNotifier.updateBtn = function(cert, host) {
 SSLNotifier.getHost = function(location) {
 	// Convert to string 
 	location = "" + location;
-	myDump(location.substring(8, location.indexOf('/',8)));
 	return location.substring(8, location.indexOf('/',8));
 };
 
