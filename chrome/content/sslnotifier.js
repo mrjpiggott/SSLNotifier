@@ -94,7 +94,12 @@ SSLNotifier.rowToCert = function(row) {
 /***********************
  * Browser Code
  ***********************/
-SSLNotifier.onPageLoad = function(aEvent) {
+SSLNotifier.onPageLoad = function(aEvent) {	
+	var location = "" + aEvent.originalTarget.location;
+	if (location.indexOf('https://',0) != 0) {
+		// Avoid some weird page notifications like javascript:''
+		return;
+	}
   	var ui = gBrowser.securityUI;
     var sp = ui.QueryInterface(Components.interfaces.nsISSLStatusProvider);
 	var status = sp.SSLStatus;
@@ -102,7 +107,7 @@ SSLNotifier.onPageLoad = function(aEvent) {
 		status = status.QueryInterface(Components.interfaces.nsISSLStatus);
 		// It seems to be necessary to copy the certificate as it disappears on asynchronous calls.
 		SSLNotifier.handleCert(SSLNotifier.toCert(status.serverCert.commonName, status.serverCert.organization, status.serverCert.issuerOrganization, status.serverCert.sha1Fingerprint), 
-				SSLNotifier.getHost(aEvent.originalTarget.location));
+				SSLNotifier.getHost(location));
 	}
 };
 
@@ -177,8 +182,6 @@ SSLNotifier.updateBtn = function(cert, host) {
 
 // Extract host from URL, assumes https
 SSLNotifier.getHost = function(location) {
-	// Convert to string 
-	location = "" + location;
 	return location.substring(8, location.indexOf('/',8));
 };
 
