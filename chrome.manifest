@@ -1,0 +1,5 @@
+content   ca.piggott.sslnotifier                 chrome/content/
+locale    ca.piggott.sslnotifier   en-US         chrome/locale/en-US/
+
+
+overlay   chrome://browser/content/browser.xul   chrome://ca.piggott.sslnotifier/content/sslnotifier.xul
