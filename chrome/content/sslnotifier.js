@@ -225,7 +225,9 @@ SSLNotifier.toCert = function(cn, org, issuer, sha) {
 };
 
 // Load us when the browser starts
-window.addEventListener("load", function() { SSLNotifier.init();}, false);
+window.addEventListener("load", function() {
+	Components.classes["@mozilla.org/timer;1"].createInstance(Components.interfaces.nsITimer).initWithCallback(SSLNotifier.init, 500, Components.interfaces.nsITimer.TYPE_ONE_SHOT)
+}, false);
 // Unload us when the browser stops
 window.addEventListener("unload", function() {SSLNotifier.exit();}, false);
 
